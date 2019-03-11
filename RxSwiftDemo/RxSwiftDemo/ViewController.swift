@@ -10,18 +10,40 @@ import UIKit
 import RxSwift
 import RxCocoa
 
+
+struct UserViewModel {
+    //用户名
+    var username = BehaviorRelay<String>(value: "初始化名字")
+
+    //用户信息
+    lazy var userinfo = {
+        return self.username.asObservable()
+            .map{ $0 == "1" ? "就是1啊" : "你输入的是\($0)啊" }
+            .share(replay: 1)
+    }()
+}
+
 class ViewController: UIViewController {
 
     let disposeBag = DisposeBag()
+    @IBOutlet weak var textField: UITextField!
+    @IBOutlet weak var label: UILabel!
+    @IBOutlet weak var editBtn: UIButton!
+    
+    var userVM = UserViewModel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
 //        test1()
-        testCreateObserverable()
+//        testCreateObserverable()
+        testLabel()
     }
     
+    @IBAction func onEditBtn(_ sender: Any) {
+        self.userVM.username.accept("哈哈哈哈")
+    }
     func test1() {
         let temperature: Observable<Int> = Observable.create { observer -> Disposable in
             
@@ -135,19 +157,19 @@ class ViewController: UIViewController {
 //        （2）下面是一个简单的样例。为方便演示，这里增加了订阅相关代码（关于订阅我之后会详细介绍的）。
         //这个block有一个回调参数observer就是订阅这个Observable对象的订阅者
         //当一个订阅者订阅这个Observable对象的时候，就会将订阅者作为参数传入这个block来执行一些内容
-        let observable = Observable<String>.create{observer in
-            //对订阅者发出了.next事件，且携带了一个数据"hangge.com"
-            observer.onNext("hangge.com")
-            //对订阅者发出了.completed事件
-            observer.onCompleted()
-            //因为一个订阅行为会有一个Disposable类型的返回值，所以在结尾一定要returen一个Disposable
-            return Disposables.create()
-        }
+//        let observable = Observable<String>.create{observer in
+//            //对订阅者发出了.next事件，且携带了一个数据"hangge.com"
+//            observer.onNext("hangge.com")
+//            //对订阅者发出了.completed事件
+//            observer.onCompleted()
+//            //因为一个订阅行为会有一个Disposable类型的返回值，所以在结尾一定要returen一个Disposable
+//            return Disposables.create()
+//        }
         
-        //订阅测试
-        observable.subscribe {
-            print($0)
-        }
+//        //订阅测试
+//        observable.subscribe {
+//            print($0)
+//        }
         
         
 //        11，deferred() 方法
@@ -221,6 +243,17 @@ class ViewController: UIViewController {
         //https://www.jianshu.com/p/63f1681236fd
     }
 
+    func testLabel() {
+        
+        //将用户名与textField做双向绑定
+        userVM.username.asObservable().bind(to: textField.rx.text).disposed(by: disposeBag)
+        textField.rx.text.orEmpty.bind(to: userVM.username).disposed(by: disposeBag)
+        
+        //将用户名与textField做双向绑定
+//        self.textField.rx.textInput <-> self.userVM.username
+        
+        //将用户信息绑定到label上
+        userVM.userinfo.bind(to: label.rx.text).disposed(by: disposeBag)
+    }
 
 }
-
